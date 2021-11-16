@@ -1,6 +1,8 @@
 
-  Welcome to 'aud', a linux file system auditing tool. aud performs a number of
-  audits, and should run cleanly, ie, no audit errors reported.
+  Welcome to 'aud', a linux file system auditing tool. It builds
+  itself with sha256's for files of interest and will then audit them
+  for change. It is rather paranoid as it preforms sha256 checks on its
+  own .text instruction stream as well as the file list data table.
 
   'aud' can also be used during package install to make sure all
    files ended up where they are supposed to be and with the
