@@ -1,0 +1,10 @@
+aud
+aud.map
+audtab.h~
+bldaudtab
+*.gch
+*.o
+zz*
+*~
+*#
+

@@ -1,0 +1,21 @@
+
+MY_PATH = $(shell pwd)/dlcheck.so
+
+all: dltst libdlcheck.so.1 test
+
+dltst: dltst.c
+	gcc -o dltst dltst.c -ldl
+       
+libdlcheck.so.1: dlcheck.c
+	libtool compile gcc -g -O -c dlcheck.c
+	libtool link gcc dlcheck.lo -o libdlcheck.la -rpath=/tmp
+
+test: export LD_PRELOAD=$(MY_PATH)
+
+test:
+	./dltst
+
+clean:
+	libtool clean rm -f
+	rm -f .libs/*
+	rm -f dltst
