@@ -29,9 +29,19 @@ static const char *const re = "(not found)|(statically linked)|(not a dynamic ex
 
 #include "sha.h"
 #include "pipe.h"
+#include "lstat.h"
+
+#include "bldaudtab.h"
 
 // trace flag
 int t_flag = 0;
+// etc flag
+int e_flag = 0;
+// path flag
+int p_flag = 0;
+// -r path
+int r_flag = 0;
+char r_buff[1024]; // store a colon seperated series of paths
 
 #define AUD_WAIT_TIME 10*1000
 
@@ -143,7 +153,9 @@ void handle_output ( int fct, char *key, char *path, char *file, char *stat )
   char outputBuffer[65];
   char *tmpargv[3] = { "/usr/local/bin/aud", "-a", NULL };
   char *tmp1,*tmp2;
-
+  char *c, *d;
+  char wbuf_key[1024], wbuf_path[1024];
+  
   switch ( fct ) {
   case 0:
     SHA256_Init(&sha256);
@@ -161,8 +173,30 @@ void handle_output ( int fct, char *key, char *path, char *file, char *stat )
     break;
 
   case 1:
+    // build key - duplicate backstrokes
+    c = key;
+    d = wbuf_key;
+    while ( *c != 0 ) {
+      if ( *c == '\\' ) {
+	*d++ = '\\';
+      }
+      *d++ = *c++;
+    } // while
+    *d = 0;
+
+    // build path - duplicate backstrokes    
+    c = path;
+    d = wbuf_path;
+    while ( *c != 0 ) {
+      if ( *c == '\\' ) {
+	*d++ = '\\';
+      }
+      *d++ = *c++;
+    } // while
+    *d = 0;
+
     fprintf(outf,"  { \"%s\", \"%s\", \"%s\", \"%s\" },\n",
-	    key, path, file, stat);
+	    wbuf_key, wbuf_path, file, stat);
 	
     SHA256_Update(&sha256, key     , strlen(key     ));
     SHA256_Update(&sha256, path    , strlen(path    ));
@@ -236,6 +270,12 @@ void recursive_process_infile(char *infile, int line)
   char substr[132];
   char key[132];
 
+#if defined(NO_AUDIT)
+  if ( strstr(NO_AUDIT,infile) ) {
+    return;
+  }
+#endif // NO_AUDIT
+  
   depth += 1;
   
 #ifdef CP_TRACE
@@ -491,10 +531,31 @@ int main(int argc, char *argv[] )
   FILE *inf = fopen("aud.txt","r");
   char *c;
   int line = 0;
+  int arg = 1;
 
-  if ( argc > 1 && argv[1][0] == '-' && argv[1][1] == 't' ) {
-    t_flag = 1;
-  }
+  // process all flags
+  while ( arg < argc ) {
+
+    if ( argv[arg][0] == '-' && argv[arg][1] == 't' ) {
+      t_flag = 1;
+    }
+    if ( argv[arg][0] == '-' && argv[arg][1] == 'e' ) {
+      e_flag = 1;
+    }
+    if ( argv[arg][0] == '-' && argv[arg][1] == 'p' ) {
+      p_flag = 1;
+    }
+    if ( argv[arg][0] == '-' && argv[arg][1] == 'r' ) {
+      if ( r_flag + strlen(&argv[arg][2]) + 3 /* why 3? defensive programming! */ >= sizeof(r_buff) ) {
+	printf("too many -r - add to aud.txt instead\n");
+      } else {
+	sprintf(&r_buff[r_flag],"%s:",&argv[arg][2]);
+	r_flag = strlen(r_buff);
+      }
+    }
+    // on to next argument
+    arg += 1;
+  } // while arg
   
   if ( !inf ) {
     printf("bldaudtab: no aud.txt input file\n");
@@ -509,6 +570,23 @@ int main(int argc, char *argv[] )
   // init
   handle_output ( 0, NULL, NULL, NULL, NULL );
 
+  // add -r if any
+  if ( r_flag ) {
+    if ( r_buff[r_flag-1] == ':' ) {
+      r_buff[r_flag-1] = 0;
+    }
+    lstat_walk_colon_path(r_buff);
+  }
+  
+  // add PATH
+  if ( p_flag ) {
+    lstat_walk_path();
+  }
+  // add /etc
+  if ( e_flag ) {
+    recurse_add_files ( "/etc" );
+  }
+  
   while ( fgets(wbuf,256,inf) ) {
     // sanity check line
     line += 1;
@@ -522,7 +600,7 @@ int main(int argc, char *argv[] )
     recursive_process_infile(wbuf,line);
 
   } // while
-
+  
   // process any vdso
   audit_lib_modules_vdso(line);
   

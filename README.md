@@ -1,8 +1,7 @@
 
-  Welcome to 'aud', a linux file system auditing tool. It builds
-  itself with sha256's for files of interest and will then audit them
-  for change. It is rather paranoid as it preforms sha256 checks on its
-  own .text instruction stream as well as the file list data table.
+  Welcome to 'aud', a linux file system auditing tool. 'aud' performs a number of
+  audits, and should run cleanly, ie, no audit errors reported. If 'aud' comes across
+  an executable, it will recursively walk library dependancies and audit those too.
 
   'aud' can also be used during package install to make sure all
    files ended up where they are supposed to be and with the
@@ -21,6 +20,34 @@ Build Instructions
   Keep the source files around, but with restricted access, as you may
   from time to time, need to rebuild aud.
 
+To Prepare to Run
+
+  You will want to add any files or directories you wish to audit
+  to aud.txt.
+
+  Next, run bldaudtab to build an audit table for 'aud'. bldaudtab takes
+  the following switches
+
+      -e This adds the /etc audit path
+      -p This add the environmental variable PATH directories
+      -t Trace as you run
+      -r/<some path> This adds <some path> to audit. Note you
+      can use multiple of these swtiches
+
+  Example
+      ./bldaudtab -t -r/etc -r/usr/local/lib
+      
+      is equivalent to
+
+      ./bldaudtab -t -e -r/usr/local/lib
+
+  You will need to rebuild 'aud' as follows
+
+      make aud
+
+  Since 'aud' has to audit itself, you have to edit build.sh with
+  the proper bldaudtab command line, then run this script.
+  
 To Run
 
   ./aud
@@ -28,7 +55,9 @@ To Run
   You can also run 'aud' from a script of some sort. It returns a 0 if it
   was a clean run, else *errors<<16 | 1) is returned.
 
-  Note that any errors are logged in /var/log/auth.log.
+  Note that any errors are logged in /var/log/auth.log. And, for some
+  reason, RedHat linux 8 does not support AUTH_LOG so the logs don't show
+  up until you patch the system.
 
 To Test
 
@@ -89,4 +118,7 @@ Notes
    won't audit itself. However, remember that aud does internal audits
    at startup of it's data tables and it's .text space so it gives you
    some assurance that it hasn't been mucked with.
-   
+
+5. If for some reason, you wish to exclude certain files from 'aud',
+   edit bldaudtab.h NO_AUDIT to add those files as a colon seperated
+   list.

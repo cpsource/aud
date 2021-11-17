@@ -19,15 +19,16 @@ SPATCH = spatch
 AUD_VERSION := "$(shell git describe --abbrev=8 --dirty --always --tags)"
 BUILD_DATE  := "$(shell date)"
 
-C_FLAGS = -Wall -Werror
+G_FLAG = -g
+C_FLAGS = -Wall -Werror $(G_FLAG)
 
-all: bldaudtab aud
+all: aud bldaudtab
 
 t.o: t.c
-	$(CC) $(C_FLAGS) -g -c $?
+	$(CC) $(C_FLAGS) -c $?
 
 t: t.o sha.o pipe.o
-	$(CC) $(C_FLAGS)  -g -o t t.o sha.o pipe.o -lssl -lcrypto -Wl,-Map=aud.map
+	$(CC) $(C_FLAGS)  -o t t.o sha.o pipe.o -lssl -lcrypto -Wl,-Map=aud.map
 
 pipe.o: pipe.c
 	$(CC) $(C_FLAGS) -c -O2 pipe.c
@@ -50,14 +51,17 @@ bldaudtab.o: bldaudtab.c sha.h
 aud.o: aud.c audtab.h
 	$(CC) $(C_FLAGS) -DAUD_VERSION=\"$(AUD_VERSION)\" -DBUILD_DATE=\"$(BUILD_DATE)\"  -c aud.c
 
-bldaudtab: bldaudtab.o sha.o pipe.o
-	$(CC) $(C_FLAGS) -o bldaudtab -O2 bldaudtab.o sha.o pipe.o -lssl -lcrypto
+bldaudtab: bldaudtab.o sha.o pipe.o lstat.o
+	$(CC) $(C_FLAGS) -o bldaudtab -O2 bldaudtab.o sha.o pipe.o lstat.o -lssl -lcrypto
 
 aud: aud.o sha.o pipe.o
 	$(CC) $(C_FLAGS)  -o aud aud.o sha.o pipe.o -lssl -lcrypto -Wl,-Map=aud.map
 
 audsum.o: audsum.c
 	$(CC) $(C_FLAGS) -O2 -c $?
+
+lstat.o: lstat.c lstat.h bldaudtab.h
+	$(CC) $(C_FLAGS) -O2 -c lstat.c
 
 audsum: audsum.o sha.o pipe.o
 	$(CC) $(C_FLAGS)  -o audsum audsum.o sha.o pipe.o -lssl -lcrypto -Wl,-Map=aud.map
