@@ -9,6 +9,20 @@
    
 Build Instructions
 
+  Optain sources by
+
+    git clone https://github.com/cpsource/aud
+
+  then
+
+    cd aud
+    
+  Optionally, you might want to verify my signature on each file in this kit. Go to
+  my public gist at https://gist.github.com/cpsource and download key.pub into the
+  aud directory. Then run this script:
+
+   for i in *; do ./verify.sh $i; done
+
   First, edit aud.txt with files you wish to audit.
 
   Then,
