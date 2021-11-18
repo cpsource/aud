@@ -247,6 +247,10 @@ int main ( int argc, char *argv[] )
     zmain();
     exit(0);
   }
+  // used with export LD_DEBUG="all" to trace ld linkages
+  if ( argc > 1 && argv[1][0] == '-' && argv[1][1] == 'x' ) {
+    exit(0);
+  }
 
   printf("%s: Version: %s\n",
 	 argv[0],

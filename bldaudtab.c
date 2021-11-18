@@ -269,15 +269,9 @@ void recursive_process_infile(char *infile, int line)
 
   char substr[132];
   char key[132];
-
-#if defined(NO_AUDIT)
-  if ( strstr(NO_AUDIT,infile) ) {
-    return;
-  }
-#endif // NO_AUDIT
   
   depth += 1;
-  
+
 #ifdef CP_TRACE
   printf("cp1.%d: infile = <%s>\n",depth,infile);
 #endif  
@@ -295,6 +289,12 @@ void recursive_process_infile(char *infile, int line)
   if ( t_flag ) {
     printf("%s.%4d.%3d: <%s>\n", __FUNCTION__, line, depth,infile);
   }
+
+#if defined(NO_AUDIT)
+  if ( strstr(NO_AUDIT,infile) ) {
+    goto dig_in_to_libraries;
+  }
+#endif // NO_AUDIT
   
 #ifdef CP_TRACE
   printf("cp2.%d: infile = <%s>\n",depth,infile);
@@ -326,6 +326,10 @@ void recursive_process_infile(char *infile, int line)
   // now, lets dig into what libraries are linked
   // with this image. Use ldd.
   //
+
+#if defined(NO_AUDIT)
+ dig_in_to_libraries:;
+#endif // NO_AUDIT
   
 #ifdef CP_TRACE
   printf("cp4.%d: <%s> <%s>\n",depth,infile,args[1]);

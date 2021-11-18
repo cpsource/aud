@@ -54,8 +54,9 @@ aud.o: aud.c audtab.h
 bldaudtab: bldaudtab.o sha.o pipe.o lstat.o
 	$(CC) $(C_FLAGS) -o bldaudtab -O2 bldaudtab.o sha.o pipe.o lstat.o -lssl -lcrypto
 
+# -z now disables lazy binding by ld
 aud: aud.o sha.o pipe.o
-	$(CC) $(C_FLAGS)  -o aud aud.o sha.o pipe.o -lssl -lcrypto -Wl,-Map=aud.map
+	$(CC) $(C_FLAGS)  -o aud aud.o sha.o pipe.o -lssl -lcrypto -Wl,-z now -Wl,-Map=aud.map
 
 audsum.o: audsum.c
 	$(CC) $(C_FLAGS) -O2 -c $?
